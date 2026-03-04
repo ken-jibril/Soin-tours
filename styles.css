@@ -130,10 +130,16 @@ img {
   font-size: 1.5rem;
   font-weight: bold;
   color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.logo i {
-  margin-right: 8px;
+.logo-img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: 5px;
 }
 
 .nav-links {
@@ -582,14 +588,16 @@ img {
 
 .contact-content {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 50px;
+  grid-template-columns: 1fr;
+  gap: 30px;
+  max-width: 700px;
+  margin: 0 auto;
 }
 
 .contact-info {
-  display: flex;
-  flex-direction: column;
-  gap: 30px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
 }
 
 .contact-item {
@@ -620,6 +628,16 @@ img {
 
 .contact-item p {
   color: var(--light-text);
+}
+
+.contact-item p a {
+  color: var(--light-text);
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.contact-item p a:hover {
+  color: var(--primary-color);
 }
 
 .contact-form {
@@ -897,6 +915,16 @@ img {
   background: var(--primary-color);
 }
 
+/* WhatsApp hover color */
+.social-links a[href*="wa.me"]:hover {
+  background: #25d366;
+}
+
+/* X/Twitter hover color */
+.social-links a[href*="x.com"]:hover {
+  background: #000000;
+}
+
 .footer-section ul li {
   margin-bottom: 10px;
 }
@@ -907,6 +935,32 @@ img {
 }
 
 .footer-section ul li a:hover {
+  color: var(--white);
+}
+
+/* Contact list styling in footer */
+.contact-list {
+  list-style: none;
+}
+
+.contact-list li {
+  margin-bottom: 15px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.contact-list li i {
+  color: var(--primary-color);
+  margin-top: 4px;
+}
+
+.contact-list li a {
+  color: #aaa;
+  word-break: break-word;
+}
+
+.contact-list li a:hover {
   color: var(--white);
 }
 
@@ -1000,6 +1054,10 @@ img {
   .packages-table th,
   .packages-table td {
     padding: 10px 5px;
+  }
+
+  .contact-info {
+    grid-template-columns: 1fr;
   }
 }
 
