@@ -59,8 +59,8 @@
                         <h3>Expert Guides</h3>
                         <p>Professional local guides</p>
                     </div>
-                    <div">
-                        <i class="feature-card class="fas fa-headset"></i>
+                    <div class="feature-card">
+                        <i class="fas fa-headset"></i>
                         <h3>24/7 Support</h3>
                         <p>Round-the-clock assistance</p>
                     </div>
@@ -242,11 +242,16 @@
             
             <!-- Admin Login -->
             <div id="adminLogin" class="admin-login">
+                <div class="admin-notice">
+                    <i class="fas fa-lock"></i>
+                    <span>This area is restricted to team administrators only.</span>
+                </div>
                 <h3>Admin Login</h3>
                 <form id="loginForm">
+                    <div id="loginError" class="error-message" style="display: none;"></div>
                     <div class="form-group">
-                        <label for="username">Username</label>
-                        <input type="text" id="username" required>
+                        <label for="username">Email</label>
+                        <input type="email" id="username" required placeholder="admin@soinafrica.com">
                     </div>
                     <div class="form-group">
                         <label for="password">Password</label>
@@ -254,7 +259,7 @@
                     </div>
                     <button type="submit" class="btn btn-primary">Login</button>
                 </form>
-                <p class="login-hint">Demo credentials: admin / admin123</p>
+                <p class="login-hint">Contact your administrator for access credentials.</p>
             </div>
 
             <!-- Admin Dashboard -->
@@ -440,6 +445,7 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="main.js"></script>
 </body>
 </html>

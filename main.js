@@ -15,13 +15,37 @@ const firebaseConfig = {
 
 // Initialize Firebase
 let database;
-try {
-  firebase.initializeApp(firebaseConfig);
-  database = firebase.database();
-  console.log("Firebase initialized successfully!");
-} catch (error) {
-  console.error("Firebase initialization error:", error);
+let auth;
+
+function initFirebase() {
+  try {
+    if (typeof firebase !== "undefined") {
+      firebase.initializeApp(firebaseConfig);
+      database = firebase.database();
+
+      if (typeof firebase.auth === "function") {
+        auth = firebase.auth();
+      }
+
+      console.log("Firebase initialized successfully!");
+    } else {
+      console.error("Firebase SDK not loaded");
+    }
+  } catch (error) {
+    console.error("Firebase initialization error:", error);
+  }
 }
+
+// Initialize when DOM is ready
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initFirebase);
+} else {
+  initFirebase();
+}
+
+// Admin configuration - List of authorized admin emails
+// Only these emails can access the admin panel
+const ADMIN_EMAILS = ["jibken80@gmail.com", "jncmukami@gmail.com"];
 
 // Database references - initialized in DOMContentLoaded after database is ready
 let packagesRef;
@@ -615,14 +639,48 @@ function initializeAdmin() {
     adminLink.style.display = "none";
   }
 
-  // Check for existing admin session
-  const adminSession = localStorage.getItem("adminSession");
-  if (adminSession) {
-    showAdminDashboard();
-    if (adminLink) {
-      adminLink.style.display = "inline";
-    }
+  // Check if auth is initialized
+  if (!auth) {
+    console.warn("Firebase Auth not initialized yet");
+    return;
   }
+
+  // Set up Firebase Auth state observer
+  auth.onAuthStateChanged((user) => {
+    if (user) {
+      // User is signed in
+      const adminSession = localStorage.getItem("adminSession");
+      const userEmail = user.email;
+
+      // Verify user is in admin list
+      if (adminSession && ADMIN_EMAILS.includes(userEmail)) {
+        showAdminDashboard();
+        if (adminLink) {
+          adminLink.style.display = "inline";
+        }
+      } else {
+        // Clear session if not admin
+        localStorage.removeItem("adminSession");
+        localStorage.removeItem("adminToken");
+        localStorage.removeItem("adminEmail");
+      }
+    } else {
+      // User is signed out
+      localStorage.removeItem("adminSession");
+      localStorage.removeItem("adminToken");
+      localStorage.removeItem("adminEmail");
+
+      const adminDash = document.getElementById("adminDashboard");
+      const adminLoginDiv = document.getElementById("adminLogin");
+
+      if (adminDash && adminDash.style.display === "block") {
+        adminDash.style.display = "none";
+        if (adminLoginDiv) {
+          adminLoginDiv.style.display = "block";
+        }
+      }
+    }
+  });
 
   // Login form handler
   const loginForm = document.getElementById("loginForm");
@@ -662,33 +720,116 @@ function initializeAdmin() {
 
 function handleAdminLogin(e) {
   e.preventDefault();
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
 
-  // Simple admin authentication
-  const adminCredentials = {
-    username: "admin",
-    password: "admin123",
-  };
+  // Get error message element
+  const errorEl = document.getElementById("loginError");
 
-  if (
-    username === adminCredentials.username &&
-    password === adminCredentials.password
-  ) {
-    isAdminLoggedIn = true;
-    localStorage.setItem("adminSession", "true");
-    showAdminDashboard();
-    document.getElementById("loginForm").reset();
-  } else {
-    alert("Invalid credentials. Please try again.");
+  // Hide error message initially
+  if (errorEl) {
+    errorEl.style.display = "none";
+    errorEl.className = "error-message";
   }
+
+  // Check if auth is initialized
+  if (!auth) {
+    if (errorEl) {
+      errorEl.textContent =
+        "Authentication not ready. Please refresh the page and try again.";
+      errorEl.style.display = "block";
+    }
+    return;
+  }
+
+  const email = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+  const loginBtn = document.querySelector('#loginForm button[type="submit"]');
+
+  // Show loading state
+  if (loginBtn) {
+    loginBtn.disabled = true;
+    loginBtn.textContent = "Logging in...";
+  }
+
+  // Authenticate with Firebase
+  auth
+    .signInWithEmailAndPassword(email, password)
+    .then((userCredential) => {
+      // Check if user email is in the allowed admin list
+      const user = userCredential.user;
+
+      if (ADMIN_EMAILS.includes(user.email)) {
+        // Admin verified - set session
+        user.getIdToken().then((idToken) => {
+          localStorage.setItem("adminToken", idToken);
+          localStorage.setItem("adminEmail", user.email);
+          localStorage.setItem("adminSession", "true");
+
+          showAdminDashboard();
+          document.getElementById("loginForm").reset();
+          console.log("Admin logged in:", user.email);
+        });
+      } else {
+        // User is authenticated but not an admin
+        auth.signOut();
+        if (errorEl) {
+          errorEl.textContent =
+            "Access denied. You are not authorized to access the admin panel.";
+          errorEl.style.display = "block";
+        }
+        console.warn("Unauthorized login attempt:", user.email);
+      }
+    })
+    .catch((error) => {
+      console.error("Login error:", error);
+      let errorMessage = "Login failed. Please check your credentials.";
+
+      if (error.code === "auth/invalid-email") {
+        errorMessage = "Invalid email address.";
+      } else if (error.code === "auth/user-not-found") {
+        errorMessage = "No account found with this email.";
+      } else if (error.code === "auth/wrong-password") {
+        errorMessage = "Incorrect password.";
+      } else if (error.code === "auth/invalid-credential") {
+        errorMessage = "Invalid email or password.";
+      }
+
+      if (errorEl) {
+        errorEl.textContent = errorMessage;
+        errorEl.style.display = "block";
+      }
+    })
+    .finally(() => {
+      // Reset button state
+      if (loginBtn) {
+        loginBtn.disabled = false;
+        loginBtn.textContent = "Login";
+      }
+    });
 }
 
 function handleAdminLogout() {
+  // Sign out from Firebase
+  auth
+    .signOut()
+    .then(() => {
+      console.log("User signed out from Firebase");
+    })
+    .catch((error) => {
+      console.error("Error signing out:", error);
+    });
+
   isAdminLoggedIn = false;
   localStorage.removeItem("adminSession");
+  localStorage.removeItem("adminToken");
+  localStorage.removeItem("adminEmail");
+
   document.getElementById("adminDashboard").style.display = "none";
   document.getElementById("adminLogin").style.display = "block";
+
+  const adminLink = document.querySelector(".admin-link");
+  if (adminLink) {
+    adminLink.style.display = "none";
+  }
 }
 
 function showAdminDashboard() {

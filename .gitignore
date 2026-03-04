@@ -1,8 +1,10 @@
 # Firebase configuration files (contains sensitive API keys)
 FIREBASE_SETUP.md
+ADMIN_SETUP.md
 
 # EmailJS configuration guide
 EMAILJS_SETUP.md
+
 
 # Google Workspace configuration guide
 GOOGLE_WORKSPACE_SETUP.md
@@ -29,3 +31,6 @@ npm-debug.log*
 
 # Cache
 .cache/
+
+
+firebase-rules.json
