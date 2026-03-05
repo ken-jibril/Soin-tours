@@ -224,9 +224,32 @@
           </form>
         </div>
 
-        <!-- Reviews Display -->
-        <div class="reviews-grid" id="reviewsGrid">
-          <!-- Reviews will be loaded dynamically -->
+        <!-- Reviews Carousel -->
+        <div class="reviews-carousel-container">
+            <!-- Floating Particles Background -->
+            <div class="particles-bg" id="particlesBg"></div>
+            
+            <!-- Carousel Wrapper -->
+            <div class="carousel-wrapper">
+                <button class="carousel-arrow carousel-arrow-left" id="carouselPrev">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                
+                <div class="carousel-viewport">
+                    <div class="carousel-track" id="carouselTrack">
+                        <!-- Reviews will be loaded dynamically -->
+                    </div>
+                </div>
+                
+                <button class="carousel-arrow carousel-arrow-right" id="carouselNext">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+            
+            <!-- Carousel Indicators -->
+            <div class="carousel-indicators" id="carouselIndicators">
+                <!-- Indicators will be generated dynamically -->
+            </div>
         </div>
       </div>
     </section>

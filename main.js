@@ -298,6 +298,9 @@ document.addEventListener("DOMContentLoaded", function () {
   loadPackages();
   loadReviews();
 
+  // Initialize carousel after reviews are loaded
+  initializeCarousel();
+
   // Initialize filter buttons
   initializeFilterButtons();
 
@@ -441,16 +444,23 @@ function filterPackages(filter) {
 // ============================================
 // Reviews System (Firebase)
 // ============================================
+// Reviews Carousel Functionality
+// ============================================
+
+let reviews = [];
+let currentReviewIndex = 0;
+
 function loadReviews() {
   if (!reviewsRef) {
     console.warn("reviewsRef not initialized");
     return;
   }
 
-  const reviewsGrid = document.getElementById("reviewsGrid");
+  const carouselTrack = document.getElementById("carouselTrack");
+  const indicatorsContainer = document.getElementById("carouselIndicators");
 
   reviewsRef.on("value", (snapshot) => {
-    const reviews = [];
+    reviews = [];
     snapshot.forEach((childSnapshot) => {
       reviews.push(childSnapshot.val());
     });
@@ -459,33 +469,146 @@ function loadReviews() {
     reviews.sort((a, b) => new Date(b.date) - new Date(a.date));
 
     if (reviews.length === 0) {
-      reviewsGrid.innerHTML =
-        '<p style="text-align: center; grid-column: 1/-1; color: #666;">No reviews yet. Be the first to share your experience!</p>';
+      carouselTrack.innerHTML = `
+        <div class="no-reviews-message">
+            <i class="fas fa-comments"></i>
+            <p>No reviews yet. Be the first to share your experience!</p>
+        </div>
+      `;
+      indicatorsContainer.innerHTML = "";
       return;
     }
 
-    reviewsGrid.innerHTML = reviews
-      .map((review) => createReviewCard(review))
+    // Create carousel slides
+    carouselTrack.innerHTML = reviews
+      .map((review, index) => createReviewSlide(review, index))
       .join("");
+
+    // Create indicators
+    indicatorsContainer.innerHTML = reviews
+      .map(
+        (_, index) =>
+          `<button class="carousel-indicator ${index === 0 ? "active" : ""}" data-index="${index}"></button>`,
+      )
+      .join("");
+
+    // Add indicator click events
+    document.querySelectorAll(".carousel-indicator").forEach((indicator) => {
+      indicator.addEventListener("click", () => {
+        goToSlide(parseInt(indicator.dataset.index));
+      });
+    });
+
+    // Initialize particles
+    initializeParticles();
   });
 }
 
-function createReviewCard(review) {
+function createReviewSlide(review, index) {
   const stars = "★".repeat(review.rating) + "☆".repeat(5 - review.rating);
+  const initials = review.name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
   return `
-        <div class="review-card">
-            <div class="review-header">
-                <div class="reviewer-info">
-                    <h4>${review.name}</h4>
-                    <span>${review.country}</span>
-                </div>
-                <div class="review-rating">${stars}</div>
-            </div>
-            <span class="review-package">${review.package}</span>
-            <p>"${review.text}"</p>
+    <div class="carousel-slide">
+      <div class="review-card">
+        <div class="reviewer-avatar">${initials}</div>
+        <h3 class="reviewer-name">${review.name}</h3>
+        <p class="reviewer-country">${review.country}</p>
+        <div class="review-stars">
+          ${Array(5)
+            .fill(0)
+            .map(
+              (_, i) =>
+                `<i class="fas fa-star" style="color: ${i < review.rating ? "#ffd700" : "rgba(255,255,255,0.3)"}"></i>`,
+            )
+            .join("")}
         </div>
-    `;
+        <p class="review-text">"${review.text}"</p>
+        <span class="review-package"><i class="fas fa-map-marker-alt"></i> ${review.package}</span>
+      </div>
+    </div>
+  `;
+}
+
+function goToSlide(index) {
+  if (index < 0) index = reviews.length - 1;
+  if (index >= reviews.length) index = 0;
+
+  currentReviewIndex = index;
+
+  const track = document.getElementById("carouselTrack");
+  track.style.transform = `translateX(-${index * 100}%)`;
+
+  // Update indicators
+  document.querySelectorAll(".carousel-indicator").forEach((ind, i) => {
+    ind.classList.toggle("active", i === index);
+  });
+}
+
+function initializeParticles() {
+  const particlesBg = document.getElementById("particlesBg");
+
+  // Clear existing particles
+  particlesBg.innerHTML = "";
+
+  // Create spark elements
+  for (let i = 0; i < 8; i++) {
+    const spark = document.createElement("div");
+    spark.className = "spark";
+    spark.style.left = `${Math.random() * 100}%`;
+    spark.style.top = `${Math.random() * 100}%`;
+    spark.style.animationDelay = `${Math.random() * 8}s`;
+    spark.style.animationDuration = `${6 + Math.random() * 4}s`;
+    particlesBg.appendChild(spark);
+  }
+}
+
+function initializeCarousel() {
+  const prevBtn = document.getElementById("carouselPrev");
+  const nextBtn = document.getElementById("carouselNext");
+
+  if (prevBtn) {
+    prevBtn.addEventListener("click", () => {
+      goToSlide(currentReviewIndex - 1);
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener("click", () => {
+      goToSlide(currentReviewIndex + 1);
+    });
+  }
+
+  // Keyboard navigation
+  document.addEventListener("keydown", (e) => {
+    const carouselSection = document.querySelector(
+      ".reviews-carousel-container",
+    );
+    if (!carouselSection) return;
+
+    const rect = carouselSection.getBoundingClientRect();
+    const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
+
+    if (isVisible) {
+      if (e.key === "ArrowLeft") {
+        goToSlide(currentReviewIndex - 1);
+      } else if (e.key === "ArrowRight") {
+        goToSlide(currentReviewIndex + 1);
+      }
+    }
+  });
+
+  // Auto-advance every 8 seconds
+  setInterval(() => {
+    if (reviews.length > 1) {
+      goToSlide(currentReviewIndex + 1);
+    }
+  }, 8000);
 }
 
 function initializeReviewForm() {
@@ -979,14 +1102,14 @@ function handleUpdatePackage(e) {
 }
 
 // WhatsApp Floating Widget Functionality
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
   const whatsappFloat = document.getElementById("whatsappFloat");
   const whatsappPopup = document.getElementById("whatsappPopup");
   const whatsappClose = document.getElementById("whatsappClose");
 
   // Toggle popup on float button click
   if (whatsappFloat) {
-    whatsappFloat.addEventListener("click", function(e) {
+    whatsappFloat.addEventListener("click", function (e) {
       e.stopPropagation();
       whatsappPopup.classList.toggle("active");
     });
@@ -994,15 +1117,18 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // Close popup on close button click
   if (whatsappClose) {
-    whatsappClose.addEventListener("click", function() {
+    whatsappClose.addEventListener("click", function () {
       whatsappPopup.classList.remove("active");
     });
   }
 
   // Close popup when clicking outside
-  document.addEventListener("click", function(e) {
+  document.addEventListener("click", function (e) {
     if (whatsappPopup && whatsappFloat) {
-      if (!whatsappPopup.contains(e.target) && !whatsappFloat.contains(e.target)) {
+      if (
+        !whatsappPopup.contains(e.target) &&
+        !whatsappFloat.contains(e.target)
+      ) {
         whatsappPopup.classList.remove("active");
       }
     }
@@ -1010,7 +1136,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // Prevent popup from closing when clicking inside it
   if (whatsappPopup) {
-    whatsappPopup.addEventListener("click", function(e) {
+    whatsappPopup.addEventListener("click", function (e) {
       e.stopPropagation();
     });
   }
