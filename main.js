@@ -977,3 +977,41 @@ function handleUpdatePackage(e) {
       alert("Failed to update package. Please try again.");
     });
 }
+
+// WhatsApp Floating Widget Functionality
+document.addEventListener("DOMContentLoaded", function() {
+  const whatsappFloat = document.getElementById("whatsappFloat");
+  const whatsappPopup = document.getElementById("whatsappPopup");
+  const whatsappClose = document.getElementById("whatsappClose");
+
+  // Toggle popup on float button click
+  if (whatsappFloat) {
+    whatsappFloat.addEventListener("click", function(e) {
+      e.stopPropagation();
+      whatsappPopup.classList.toggle("active");
+    });
+  }
+
+  // Close popup on close button click
+  if (whatsappClose) {
+    whatsappClose.addEventListener("click", function() {
+      whatsappPopup.classList.remove("active");
+    });
+  }
+
+  // Close popup when clicking outside
+  document.addEventListener("click", function(e) {
+    if (whatsappPopup && whatsappFloat) {
+      if (!whatsappPopup.contains(e.target) && !whatsappFloat.contains(e.target)) {
+        whatsappPopup.classList.remove("active");
+      }
+    }
+  });
+
+  // Prevent popup from closing when clicking inside it
+  if (whatsappPopup) {
+    whatsappPopup.addEventListener("click", function(e) {
+      e.stopPropagation();
+    });
+  }
+});
